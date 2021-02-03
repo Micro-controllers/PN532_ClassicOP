@@ -5,6 +5,8 @@
 #include <ops.h>
 
 #define INVALID 0xFFFF
+#define BLOCK_SIZE 16
+
 
 PN532_SPI pn532_spi(SPI, 10); // Initialize the NP532 with SPI
 // NfcAdapter nfc = NfcAdapter(pn532_spi);
@@ -31,13 +33,12 @@ void setup() {
   nfc_pn532.SAMConfig();
 }
 
-uint8_t *read (byte sector, uint8_t block, uint8_t keyNumber, uint8_t *keyData) {
+uint8_t *read (byte sector, uint8_t block, uint8_t *data, uint8_t keyNumber, uint8_t *keyData) {
 
   if (authenticate(sector, keyNumber, keyData)) {
-    uint8_t data[18];
     if (readSectorBlock(sector, block, data)) {
       serialPrintf("\ndata in sector %d block %d - ", sector, block);
-      serialPrintBuffer(data, sizeof(data) - 2);
+      serialPrintBuffer(data, BLOCK_SIZE);
       return data;
     }
     else {
@@ -65,30 +66,44 @@ void write(byte sector, uint8_t block, byte *data, uint8_t keyNumber, uint8_t *k
   }
 }
 
-void increment() {
-  byte bytes[16];
-  int value;
-  memcpy(&value, bytes, sizeof(int));
+void setValue(byte sector, uint8_t block, uint16_t value, uint8_t keyNumber, uint8_t *keyData) {
+  byte data[16];
+  memset(data, 0, sizeof(data));
+  memcpy(data, &value, sizeof(value));
+  write(sector, block, data, keyNumber, keyData);
+}
+
+uint16_t getValue(byte sector, uint8_t block, uint8_t keyNumber, uint8_t *keyData) {
+  uint8_t data[16];
+  uint16_t value = INVALID;
+  read(sector, block, data, keyNumber, keyData);
+  if (data != NULL) {
+    memcpy(&value, data, sizeof(uint16_t));
+  }
+  return value;
+}
+
+
+uint16_t add(byte sector, uint8_t block, uint8_t keyNumber, uint8_t *keyData, uint16_t inc) {
+  uint16_t value = getValue(sector, block, keyNumber, keyData);
+  if (value != INVALID) {
+    value += inc;
+    setValue(sector, block, value, keyNumber, keyData);
+    // double check
+    uint16_t value_check = getValue(sector, block, keyNumber, keyData);
+    return value_check == value? value: INVALID;
+  }
+  return value;
+}
+
+uint16_t increment(byte sector, uint8_t block, uint8_t keyNumber, uint8_t *keyData) {
+  uint16_t inc = 1;
+  return add(sector, block, keyNumber, keyData, inc);
 }
 
 uint16_t decrement(byte sector, uint8_t block, uint8_t keyNumber, uint8_t *keyData) {
-  uint8_t *data = read(sector, block, keyNumber, keyData);
-  uint16_t value;
-
-  if (data != NULL) {
-    memcpy(&value, data, sizeof(uint16_t));
-    value = value -= 1;
-    write(sector, block, data, keyNumber, keyData);
-
-    // check
-    data = read(sector, block, keyNumber, keyData);
-    if (data != NULL) {
-      uint16_t value_check;
-      memcpy(&value_check, data, sizeof(uint16_t));
-      return value_check == value? value: INVALID;
-    }
-  }
-  return INVALID; // Failed
+  uint16_t inc = -1;
+  return add(sector, block, keyNumber, keyData, inc);
 }
 
 void setAuthKey() {
@@ -107,10 +122,10 @@ void loop() {
   byte data[16];
   uint16_t counter = 300;
   memset(data, 0, sizeof(data));
-  memcpy(data, &counter, sizeof(counter));
+  // memcpy(data, &counter, sizeof(counter));
   // write(sector, block, data, keyNumber, keyData);
-  // read(sector, block, keyNumber, keyData);
-  if (decrement(sector, block, keyNumber, keyData) == INVALID) {
-    Serial.println("Failed to decrement");
-  }
+  // read(sector, block, data, keyNumber, keyData);
+  // uint16_t val = decrement(sector, block, keyNumber, keyData);
+  uint16_t val = increment(sector, block, keyNumber, keyData);
+  serialPrintf("counter = %d", val);
 }
