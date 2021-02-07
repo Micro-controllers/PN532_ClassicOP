@@ -47,7 +47,7 @@ uint8_t authenticate(byte sector, uint8_t keyNumber, uint8_t *keyData)
         uint8_t * access_bits 4 byte array
         uint8_t *block trailer block 16 byte array
 */
-uint8_t buildKeyBlock(uint8_t keyNumber, uint8_t *keyData, uint8_t *newKeyData, uint8_t *access_bits, uint8_t *block)
+uint8_t buildKeyBlock(uint8_t keyNumber, uint8_t *keyData, uint8_t *newKeyData, uint8_t *access_bits, uint8_t *block, boolean obfuscateB=false)
 {
 
     memset(block, 0xFF, BLOCK_SIZE);
@@ -62,6 +62,12 @@ uint8_t buildKeyBlock(uint8_t keyNumber, uint8_t *keyData, uint8_t *newKeyData, 
         {
             uint8_t offset = 6;
             block[ab + offset] = access_bits[ab];
+        }
+        if (obfuscateB == true) {
+            uint8_t offset = 10;
+            for (byte k = 0; k < 6; k++) {
+                block[k +offset] = newKeyData[k];
+            }
         }
         return 1;
     }
@@ -88,7 +94,8 @@ uint8_t buildKeyBlock(uint8_t keyNumber, uint8_t *keyData, uint8_t *newKeyData, 
     Ex: New key A = 00 11 22 33 44 55 Access bits not overwritten Key B not used (so FF FF FF FF FF FF)
     Write to Sector Trailer 00 11 22 33 44 55 FF 0F 00 FF FF FF FF FF FF FF
     A default Access Bits could be FF 0F 00 that allow to write and read each block and to read and write key B
-    but it prevents from overwriting the key unlike 7F 07 88 40 could be more flexible.
+    but it prevents from overwriting the access conditions bits, unlike 0xFF, 0x07, 0x80 (the transport configuration) or
+    7F 07 88 40 which could be more flexible.
 
     Access Bits C cond block
     FF Byte 6             ~C23 1 ~C22 1 ~C21 1 ~C20 1  ~C13 1 ~C12 1 ~C11 1 ~C10 1
@@ -108,12 +115,12 @@ uint8_t buildKeyBlock(uint8_t keyNumber, uint8_t *keyData, uint8_t *newKeyData, 
         uint8_t newKeyData[6]
         uint8_t access_bits[4]
 */
-uint8_t setAuthKey(byte sector, uint8_t keyNumber, uint8_t *keyData, uint8_t *newKeyData, uint8_t *access_bits)
+uint8_t setAuthKey(byte sector, uint8_t keyNumber, uint8_t *keyData, uint8_t *newKeyData, uint8_t *access_bits, boolean obfuscateB=false)
 {
     uint8_t rc = 0;
     uint8_t key_block[BLOCK_SIZE];
 
-    if (buildKeyBlock(keyNumber, keyData, newKeyData, access_bits, key_block))
+    if (buildKeyBlock(keyNumber, keyData, newKeyData, access_bits, key_block, obfuscateB))
     {
         uint32_t blockNumber = getTrailerBlock(sector);
 

@@ -125,7 +125,7 @@ void setKeySector1()
 }
 
 
-void setKeySector0()
+void setKeySector0()  // actually reset all sectors
 {
     // uint8_t sector = 0;
     // uint8_t keyNumber = MIFARE_CMD_AUTH_A;
@@ -140,13 +140,87 @@ void setKeySector0()
     // {
     //     serialPrintf("Failed to reset key for sector %d", sector);
     // }
-
+    /*
+        Brute for reset of all sector key by using key B 0xff, 0xff, 0xff, 0xff, 0xff, knowing
+        the access conditions bits were set to 7F 07 88 (not sure how it was set this way, I can't
+        remember doing it!).
+        For some reason it worked even for sector 15 where conditions bits are set to FF 0f FF
+    */
     for (uint8_t sector = 0; sector < 16; sector++) {
-        uint8_t keyNumber = MIFARE_CMD_AUTH_B;
         uint8_t data[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x07, 0x80, 0x69, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
         uint8_t newKey[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-        uint8_t accessBits[4] = {0xff, 0x07, 0x80, 0x69};
         write(sector, 3, data, MIFARE_CMD_AUTH_B, newKey);
+    }
+}
+
+void setAccessConditionsSect14KeyAAlreadySetFFFFFF() {
+    // Original access bits FF 0F 00 = 0 [0, 0, 0], 1 [0, 0, 0], 2 [0, 0, 0], 3 [0, 0, 0]
+    // It should not be possible! Confirming - Not possible
+    uint8_t sector = 14;
+    uint8_t oldKey[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+    uint8_t newKey[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+    uint8_t accessBits[4] = {0xff, 0x07, 0x80, 0x69};
+    if (setAuthKey(sector, MIFARE_CMD_AUTH_A, oldKey, newKey, accessBits))
+    {
+        serialPrintf("Key reset for sector %d", sector);
+    }
+    else
+    {
+        serialPrintf("Failed to reset key for sector %d", sector);
+    }
+}
+
+void setSect14KeyA() {
+    // Original access bits FF 0F 00 = 0 [0, 0, 0], 1 [0, 0, 0], 2 [0, 0, 0], 3 [0, 0, 0]
+    uint8_t sector = 14;
+    uint8_t oldKey[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+    uint8_t newKey[] = {0x46, 0x4D, 0x32, 0x30, 0x32, 0x31};  // FM2021
+    uint8_t accessBits[4] = {0xff, 0x07, 0x80, 0x69};
+    if (setAuthKey(sector, MIFARE_CMD_AUTH_A, oldKey, newKey, accessBits))
+    {
+        serialPrintf("Key reset for sector %d", sector);
+    }
+    else
+    {
+        serialPrintf("Failed to reset key for sector %d", sector);
+    }
+}
+
+/*
+    Original config:
+        Key A is {0x46, 0x4D, 0x32, 0x30, 0x32, 0x31} FM2021
+        Access conditions FF 0F 00
+        key B FF FF FF FF FF FF
+    Trying to reset Key A with key B FF FF FF FF FF FF
+    it should not be possible! But it is!!!
+
+    Conclusion: both keys should be set, to prevent key B from doing anything
+*/
+void resetSect14KeyAWithKeyB_FFFFFF() {
+    uint8_t sector = 14;
+    uint8_t data[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x07, 0x80, 0x69, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+    uint8_t newKey[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+    write(sector, 3, data, MIFARE_CMD_AUTH_B, newKey);
+}
+
+/*
+    This setting is ideal to hide all data on a card. The only thing I might change is 
+    let KeyA to write access conditions.
+*/
+void setSect14KeyAObfuscateKeyB() {
+    // Original access bits FF 0F 00 = 0 [0, 0, 0], 1 [0, 0, 0], 2 [0, 0, 0], 3 [0, 0, 0]
+    uint8_t sector = 14;
+    uint8_t oldKey[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+    uint8_t newKey[] = {0x46, 0x4D, 0x32, 0x30, 0x32, 0x31};  // FM2021
+    uint8_t accessBits[4] = {0xff, 0x07, 0x80, 0x69}; // already FF 0F 00 and can't be overwritten
+    boolean obfuscateB = true;
+    if (setAuthKey(sector, MIFARE_CMD_AUTH_A, oldKey, newKey, accessBits, obfuscateB))
+    {
+        serialPrintf("Key reset for sector %d", sector);
+    }
+    else
+    {
+        serialPrintf("Failed to reset key for sector %d", sector);
     }
 }
 
@@ -157,5 +231,9 @@ void loop()
     // sector15();
     // sector10();
     // readSector1Block1();
-    setKeySector0();
+    // setKeySector0();  // brute force reset
+    // setAccessConditionsSect14KeyAAlreadySetFFFFFF();  // Failed as anticipated
+    // setSect14KeyA();  // worked even though the new access condtions can't be changed
+    // resetSect14KeyAWithKeyB_FFFFFF();
+    setSect14KeyAObfuscateKeyB();
 }

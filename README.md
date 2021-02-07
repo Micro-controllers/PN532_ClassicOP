@@ -29,7 +29,9 @@ This python [tool](https://github.com/PyPajmd/mifare_access_conditions) helps tr
     the new keys + new access conditions if you want to change them too.
     Ex: New key A = 00 11 22 33 44 55 Access bits not overwritten Key B not used (so FF FF FF FF FF FF)
     Write to Sector Trailer 00 11 22 33 44 55 FF 0F 00 FF FF FF FF FF FF FF
-    A default Access Bits could be FF 0F 00 that allow to write and read each block and to read and write key B but it prevents from overwriting the key unlike 7F 07 88 40 could be more flexible.
+    A default Access Bits could be FF 0F 00 that allow to write and read each block and to read and write key B
+    but it prevents from overwriting the access conditions bits, unlike 0xFF, 0x07, 0x80 (the transport configuration) or
+    7F 07 88 40 which could be more flexible.
 
     Access Bits C cond block
     FF Byte 6             ~C23 1 ~C22 1 ~C21 1 ~C20 1  ~C13 1 ~C12 1 ~C11 1 ~C10 1
