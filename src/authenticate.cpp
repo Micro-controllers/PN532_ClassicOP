@@ -66,7 +66,7 @@ uint8_t buildKeyBlock(uint8_t keyNumber, uint8_t *keyData, uint8_t *newKeyData, 
         if (obfuscateB == true) {
             uint8_t offset = 10;
             for (byte k = 0; k < 6; k++) {
-                block[k +offset] = newKeyData[k];
+                block[k +offset] = newKeyData[5-k];
             }
         }
         return 1;
