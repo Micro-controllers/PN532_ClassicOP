@@ -2,6 +2,7 @@
 #include <utils.h>
 #include <serialprint.h>
 #include <writeblock.h>
+#include <constants.h>
 
 /*
     sector 0..15
@@ -46,25 +47,35 @@ uint8_t authenticate(byte sector, uint8_t keyNumber, uint8_t *keyData)
         uint8_t * access_bits 4 byte array
         uint8_t *block trailer block 16 byte array
 */
-void buildKeyBlock(uint8_t keyNumber, uint8_t *keyData, uint8_t *newKeyData, uint8_t * access_bits, uint8_t *block) {
-    
-    memset(block, 0xFF, sizeof(block));
+uint8_t buildKeyBlock(uint8_t keyNumber, uint8_t *keyData, uint8_t *newKeyData, uint8_t *access_bits, uint8_t *block)
+{
 
-    if (keyNumber == MIFARE_CMD_AUTH_A) {
-        for (byte k = 0; k < 6; k++) {
+    memset(block, 0xFF, BLOCK_SIZE);
+
+    if (keyNumber == MIFARE_CMD_AUTH_A)
+    {
+        for (byte k = 0; k < 6; k++)
+        {
             block[k] = newKeyData[k];
         }
-    }
-    else {
-        uint8_t offset = 10;
-        for (byte k = 0; k < 6; k++) {
-            block[k +offset] = newKeyData[k];
+        for (byte ab = 0; ab < 4; ab++)
+        {
+            uint8_t offset = 6;
+            block[ab + offset] = access_bits[ab];
         }
+        return 1;
     }
-    for (byte ab = 0; ab < 4; ab++) {
-        uint8_t offset = 6;
-        block[ab + offset] = access_bits[ab];
+    else
+    {
+        serialPrintf("Error: setting Key B not implemented!");
+        return 0;
     }
+    // else {
+    //     uint8_t offset = 10;
+    //     for (byte k = 0; k < 6; k++) {
+    //         block[k +offset] = newKeyData[k];
+    //     }
+    // }
 }
 
 /*
@@ -97,34 +108,39 @@ void buildKeyBlock(uint8_t keyNumber, uint8_t *keyData, uint8_t *newKeyData, uin
         uint8_t newKeyData[6]
         uint8_t access_bits[4]
 */
-uint8_t setAuthKey(byte sector, uint8_t keyNumber, uint8_t *keyData, uint8_t *newKeyData, uint8_t * access_bits)
+uint8_t setAuthKey(byte sector, uint8_t keyNumber, uint8_t *keyData, uint8_t *newKeyData, uint8_t *access_bits)
 {
-    uint8_t key_block [16];
-    buildKeyBlock(keyNumber, keyData, newKeyData, access_bits, key_block);
-    uint32_t blockNumber = getTrailerBlock(sector);
-    
     uint8_t rc = 0;
-    // authenticate with the old key
-    if (authenticate(sector, keyNumber, keyData))
+    uint8_t key_block[BLOCK_SIZE];
+
+    if (buildKeyBlock(keyNumber, keyData, newKeyData, access_bits, key_block))
     {
-        // write the new key
-        if (writeSectorBlock(sector, blockNumber, key_block))
+        uint32_t blockNumber = getTrailerBlock(sector);
+
+        // authenticate with the old key
+        if (authenticate(sector, keyNumber, keyData))
         {
-            serialPrintf("\new key written in sector %d block %d \n ", sector, blockNumber);
-            rc = 1;
+            // write the new key
+            Serial.print("Writing trailer block - ");
+            serialPrintBuffer(key_block, BLOCK_SIZE);
+            if (writeSectorBlock(sector, RELATIVE_TRAILER_BLOCK_NUM, key_block))
+            {
+                serialPrintf("\nNew key written in sector %d block %d \n ", sector, blockNumber);
+                rc = 1;
+            }
+            else
+            {
+                Serial.println("Couldn't write new key");
+            }
         }
         else
         {
-            Serial.println("Couldn't write new key");
+            serialPrintf("Could not authenticate with key %c sector %d block address %d key ",
+                         keyNumber,
+                         sector,
+                         blockNumber);
+            serialPrintBuffer(keyData, 6);
         }
-    }
-    else {
-        serialPrintf("Could not authenticate with key %c sector %d block address %d key ", 
-            keyNumber,
-            sector,
-            blockNumber);
-        serialPrintBuffer(keyData, 6);
     }
     return rc;
 }
-

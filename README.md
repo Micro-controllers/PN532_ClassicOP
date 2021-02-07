@@ -16,6 +16,10 @@ and add convenient functions like:
 * read: reads a block
 * write: writes a block
 
+## Translating access bits conditions to trailer bytes
+
+This python [tool](https://github.com/PyPajmd/mifare_access_conditions) helps translating access bits conditions to trailer bytes and vice versa.
+
 ## Mifare key is composed as follow:
 
     6 byte for key A
