@@ -1,0 +1,28 @@
+{
+    "name": "PN532_ClassicOP",
+    "version": "1.0.0",
+    "description": "PN323 wrapper which simplifies read/write operations as well as setting up authentication",
+    "keywords": "PN232, Read Write Authenticate",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Micro-controllers/PN532_ClassicOP"
+    },
+    "export": {
+        "exclude": [
+            "main.cpp"
+        ]
+    },
+    "authors": [
+        {
+            "name": "PJMD",
+            "email": "pjmd@jptech.com",
+            "url": "https://www.ptech/contact",
+            "maintainer": true
+        }
+    ],
+    "license": "MIT",
+    "homepage": "https://www.ptehch.com/",
+    "dependencies": {},
+    "frameworks": "*",
+    "platforms": "*"
+}
