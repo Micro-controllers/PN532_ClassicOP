@@ -32,7 +32,7 @@ void write(byte sector, uint8_t block, byte *data, uint8_t keyNumber, uint8_t *k
     {
         if (writeSectorBlock(sector, block, data))
         {
-            serialPrintf("\ndata written in sector %d block %d \n ", sector, block);
+            serialPrintf("data written in sector %d block %d \n\n", sector, block);
         }
         else
         {
