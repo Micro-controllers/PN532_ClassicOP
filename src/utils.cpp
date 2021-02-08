@@ -39,3 +39,13 @@ uint8_t waitForUserInput(char *prompt) {
   Serial.println("");
   return inByte;
 }
+
+uint8_t confirmEntry(char *prompt, char *ok_choice="yY") {
+  uint8_t action_selected = 0;
+  Serial.print(prompt);
+  while (Serial.available() < 1);
+  while (Serial.available()) {
+    action_selected = Serial.read();
+  }
+  return String(ok_choice).indexOf(String(char(action_selected)));
+}
