@@ -132,7 +132,7 @@ uint8_t setAuthKey(byte sector, uint8_t keyNumber, uint8_t *keyData, uint8_t *ne
             serialPrintBuffer(key_block, BLOCK_SIZE);
             if (writeSectorBlock(sector, RELATIVE_TRAILER_BLOCK_NUM, key_block))
             {
-                serialPrintf("\nNew key written in sector %d block %d \n ", sector, blockNumber);
+                serialPrintf("New key written in sector %d block %d \n", sector, blockNumber);
                 rc = 1;
             }
             else
