@@ -47,5 +47,5 @@ uint8_t confirmEntry(char *prompt, char *ok_choice="yY") {
   while (Serial.available()) {
     action_selected = Serial.read();
   }
-  return String(ok_choice).indexOf(String(char(action_selected)));
+  return String(ok_choice).indexOf(String(char(action_selected))) < 0 ? 0 : 1;
 }
