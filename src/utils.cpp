@@ -13,7 +13,7 @@ uint32_t getTrailerBlock(byte sector) {
 
 void serialPrintBuffer(byte *buffer, byte bufferSize) {
   String sbuf;
-  for (byte i = 0; i < bufferSize; i++) {
+  for (int i = 0; i < bufferSize; i++) {
     sbuf.concat(String(buffer[i], HEX));
     sbuf.concat(" ");
   }
