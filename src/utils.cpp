@@ -40,7 +40,7 @@ uint8_t waitForUserInput(char *prompt) {
   return inByte;
 }
 
-uint8_t confirmEntry(char *prompt, char *ok_choice="yY") {
+uint8_t confirmEntry(char *prompt, const char *ok_choice="yY") {
   uint8_t action_selected = 0;
   Serial.print(prompt);
   while (Serial.available() < 1);
